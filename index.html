@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Cover Page Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            background-color: #f0f2f5;
+            height: 100vh;
+        }
+
+        /* Control Panel (Left Side) */
+        .sidebar {
+            width: 420px;
+            background: #ffffff;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            height: 100vh;
+            z-index: 10;
+        }
+        .sidebar h2 {
+            font-size: 22px;
+            color: #1e3a8a;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 18px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #cbd5e1;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #3b82f6;
+        }
+        .btn-download {
+            width: 100%;
+            padding: 14px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        .btn-download:hover {
+            background-color: #059669;
+        }
+
+        /* Preview Area (Right Side) */
+        .preview-container {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            background-color: #e2e8f0;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* A4 Page Formatting */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 25mm 20mm;
+            box-sizing: border-box;
+            position: relative;
+            font-family: 'Times New Roman', Times, serif;
+            color: #000000;
+        }
+
+        /* Watermark Logo */
+        .watermark-container {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 65%;
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .watermark-container img {
+            width: 100%;
+            height: auto;
+            display: none;
+        }
+
+        .page-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .header-section {
+            text-align: center;
+        }
+        .header-section h2 {
+            margin: 0;
+            font-size: 24pt;
+            font-weight: 900; /* Maximum bold representation */
+            text-transform: uppercase;
+        }
+        .header-section h1 {
+            margin: 6px 0;
+            font-size: 24pt;
+            font-weight: bold;
+        }
+        .header-section p {
+            margin: 4px 0;
+            font-size: 14pt;
+        }
+        .doc-title-box {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .doc-title {
+            font-size: 24pt;
+            font-weight: bold;
+            text-decoration: underline;
+            letter-spacing: 2px;
+        }
+        .course-info-table {
+            width: 100%;
+            font-size: 14pt;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+        .course-info-table td {
+            padding: 5px 0;
+            vertical-align: top;
+        }
+        .course-info-table td.label-col {
+            width: 180px;
+            font-weight: bold;
+        }
+        
+        /* Submission Table Layout */
+        .submission-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .submission-table td {
+            width: 50%;
+            border: 1px solid #000000;
+            padding: 15px;
+            vertical-align: top;
+            font-size: 13pt;
+            line-height: 1.6;
+        }
+        .submission-table h3 {
+            font-size: 16pt;
+            text-decoration: underline;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .submission-table p {
+            margin: 8px 0;
+        }
+        .submission-table span.bold-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 65px;
+        }
+        .submission-table span.bold-label-teacher {
+            font-weight: bold;
+            display: inline-block;
+            width: 95px;
+        }
+        .teacher-signature {
+            margin-top: 35px;
+            font-weight: bold;
+            font-size: 13pt;
+        }
+
+        .assessment-table-section {
+            margin-top: 40px;
+        }
+        .assessment-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 12pt;
+        }
+        .assessment-table th, .assessment-table td {
+            border: 1px solid #000000;
+            padding: 10px;
+        }
+        .assessment-table th {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Cover Page Generator</h2>
+        
+        <div class="section-title">ডকুমেন্ট সেটিংস</div>
+        <div class="form-group">
+            <label>বিশ্ববিদ্যালয়ের লোগো আপলোড</label>
+            <input type="file" id="in-logo" accept="image/*">
+        </div>
+        <div class="form-group">
+            <label>ডকুমেন্টের ধরন</label>
+            <select id="in-doc-type" oninput="updatePreview()">
+                <option value="ASSIGNMENT">Assignment (অ্যাসাইনমেন্ট)</option>
+                <option value="LAB REPORT">Lab Report (ল্যাব রিপোর্ট)</option>
+            </select>
+        </div>
+
+        <div class="section-title">কোর্সের বিবরণ</div>
+        <div class="form-group">
+            <label>কোর্স টাইটেল (Course Title)</label>
+            <input type="text" id="in-course-title" value="Object Oriented Programming Languages" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label>কোর্স কোড (Course Code)</label>
+            <input type="text" id="in-course-code" value="CSE 0714 1229" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label id="lbl-doc-num">অ্যাসাইনমেন্ট নম্বর</label>
+            <input type="text" id="in-doc-num" value="02" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label id="lbl-topic-name">অ্যাসাইনমেন্ট বিষয়</label>
+            <input type="text" id="in-topic-name" value="Python Control Statements and Iterations" oninput="updatePreview()">
+        </div>
+
+        <div class="section-title">তারিখ সেটিংস</div>
+        <div class="form-group">
+            <label id="lbl-in-date-1">Date of Issue</label>
+            <input type="text" id="in-date-1" value="11-05-2026" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label>Date of Submission</label>
+            <input type="text" id="in-date-sub" value="12-05-2026" oninput="updatePreview()">
+        </div>
+
+        <div class="section-title">ছাত্রের বিবরণ</div>
+        <div class="form-group">
+            <label>ছাত্রের নাম (Student Name)</label>
+            <input type="text" id="in-student-name" value="Md. Alamin Hossain" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label>ছাত্রের আইডি (Student ID)</label>
+            <input type="text" id="in-student-id" value="24250204" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label>ছাত্রের বিভাগ (Department)</label>
+            <input type="text" id="in-student-dept" value="Physics" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label>বছর (Year)</label>
+            <select id="in-student-year" oninput="updatePreview()">
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>সেমিস্টার (Semester)</label>
+            <select id="in-student-sem" oninput="updatePreview()">
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester" selected>2nd Semester</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>সেশন (Session)</label>
+            <input type="text" id="in-session" value="2024-2025" oninput="updatePreview()">
+        </div>
+
+        <div class="section-title">শিক্ষকের বিবরণ</div>
+        <div class="form-group">
+            <label>শিক্ষকের নাম (Teacher Name)</label>
+            <input type="text" id="in-teacher-name" value="Md. Nur-A-Alam" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label>শিক্ষকের পদবি (Designation)</label>
+            <select id="in-teacher-desig" oninput="updatePreview()">
+                <option value="Lecturer">Lecturer</option>
+                <option value="Assistant Professor">Assistant Professor</option>
+                <option value="Associate Professor">Associate Professor</option>
+                <option value="Professor">Professor</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>শিক্ষকের বিভাগ (Teacher's Department)</label>
+            <input type="text" id="in-teacher-dept" value="Physics" oninput="updatePreview()">
+        </div>
+
+        <button class="btn-download" onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+    <div class="preview-container">
+        <div class="a4-page" id="printable-area">
+            <div class="watermark-container">
+                <img id="out-logo" src="" alt="University Logo">
+            </div>
+
+            <div class="page-content">
+                <div class="header-section">
+                    <h2 id="out-dept-header">Department of Physics</h2>
+                    <h1>Sunamgonj Science and Technology University</h1>
+                    <p>Shantiganj, Sunamganj-3000</p>
+                    <p id="out-semester-line">Semester: 1st Year 2nd Semester, B.Sc. (Hons) in Physics</p>
+                </div>
+
+                <div class="doc-title-box">
+                    <div class="doc-title" id="out-doc-type">ASSIGNMENT</div>
+                </div>
+
+                <table class="course-info-table">
+                    <tr>
+                        <td class="label-col">Course Title</td>
+                        <td>: <span id="out-course-title">Object Oriented Programming Languages</span></td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Course Code</td>
+                        <td>: <span id="out-course-code">CSE 0714 1229</span></td>
+                    </tr>
+                    <tr>
+                        <td class="label-col" id="lbl-num">Assignment No</td>
+                        <td>: <span id="out-doc-num">02</span></td>
+                    </tr>
+                    <tr>
+                        <td class="label-col" id="lbl-topic">Assignment Topic</td>
+                        <td>: <span id="out-topic-name">Python Control Statements and Iterations</span></td>
+                    </tr>
+                </table>
+
+                <table class="submission-table">
+                    <tr>
+                        <td>
+                            <h3>Submitted By</h3>
+                            <p><span class="bold-label">Name:</span> <span id="out-student-name">Md. Alamin Hossain</span></p>
+                            <p><span class="bold-label">ID:</span> <span id="out-student-id">24250204</span></p>
+                            <p><span class="bold-label">Dept:</span> <span id="out-student-dept">Physics</span></p>
+                            <p><span class="bold-label">Session:</span> <span id="out-session">2024-2025</span></p>
+                        </td>
+                        <td>
+                            <h3>Submitted To</h3>
+                            <p><span class="bold-label-teacher">Name:</span> <span id="out-teacher-name">Md. Nur-A-Alam</span></p>
+                            <p><span class="bold-label-teacher">Designation:</span> <span id="out-teacher-desig">Lecturer</span></p>
+                            <p><span class="bold-label-teacher">Department:</span> <span id="out-teacher-dept">Department of Physics</span></p>
+                            <div class="teacher-signature">
+                                <span>Signature: ___________________</span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="assessment-table-section">
+                    <table class="assessment-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;" id="out-date-1-label">Date of Issue</th>
+                                <th style="width: 35%;">Date of Submission</th>
+                                <th style="width: 30%;">Obtained Mark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="out-date-1-val">11-05-2026</td>
+                                <td id="out-date-sub-val">12-05-2026</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updatePreview() {
+            const docType = document.getElementById('in-doc-type').value;
+            document.getElementById('out-doc-type').innerText = docType;
+
+            // Conditional Labels and Dates based on Document Type
+            if (docType === 'ASSIGNMENT') {
+                document.getElementById('lbl-num').innerText = 'অ্যাসাইনমেন্ট নম্বর';
+                document.getElementById('lbl-topic').innerText = 'অ্যাসাইনমেন্ট বিষয়';
+                document.getElementById('lbl-num').parentNode.querySelector('label').innerText = 'অ্যাসাইনমেন্ট নম্বর';
+                document.getElementById('lbl-topic-name').innerText = 'অ্যাসাইনমেন্ট বিষয়';
+                
+                document.getElementById('lbl-num').innerText = 'Assignment No';
+                document.getElementById('lbl-topic').innerText = 'Assignment Topic';
+                
+                document.getElementById('lbl-in-date-1').innerText = 'Date of Issue';
+                document.getElementById('out-date-1-label').innerText = 'Date of Issue';
+            } else {
+                document.getElementById('lbl-doc-num').innerText = 'ল্যাব রিপোর্ট নম্বর';
+                document.getElementById('lbl-topic-name').innerText = 'এক্সপেরিমেন্টের নাম';
+                
+                document.getElementById('lbl-num').innerText = 'Lab Report No';
+                document.getElementById('lbl-topic').innerText = 'Experiment Name';
+                
+                document.getElementById('lbl-in-date-1').innerText = 'Date of Experiment';
+                document.getElementById('out-date-1-label').innerText = 'Date of Experiment';
+            }
+
+            // Course Info Update
+            document.getElementById('out-course-title').innerText = document.getElementById('in-course-title').value;
+            document.getElementById('out-course-code').innerText = document.getElementById('in-course-code').value;
+            document.getElementById('out-doc-num').innerText = document.getElementById('in-doc-num').value;
+            document.getElementById('out-topic-name').innerText = document.getElementById('in-topic-name').value;
+
+            // Date Values Update
+            document.getElementById('out-date-1-val').innerText = document.getElementById('in-date-1').value;
+            document.getElementById('out-date-sub-val').innerText = document.getElementById('in-date-sub').value;
+
+            // Student Info & Dynamic Header Logic
+            const studentDept = document.getElementById('in-student-dept').value;
+            document.getElementById('out-dept-header').innerText = "Department of " + studentDept;
+            document.getElementById('out-student-name').innerText = document.getElementById('in-student-name').value;
+            document.getElementById('out-student-id').innerText = document.getElementById('in-student-id').value;
+            document.getElementById('out-student-dept').innerText = studentDept;
+            
+            const year = document.getElementById('in-student-year').value;
+            const sem = document.getElementById('in-student-sem').value;
+            document.getElementById('out-semester-line').innerText = `Semester: ${year} ${sem}, B.Sc. (Hons) in ${studentDept}`;
+            document.getElementById('out-session').innerText = document.getElementById('in-session').value;
+
+            // Teacher Info Update
+            document.getElementById('out-teacher-name').innerText = document.getElementById('in-teacher-name').value;
+            document.getElementById('out-teacher-desig').innerText = document.getElementById('in-teacher-desig').value;
+            document.getElementById('out-teacher-dept').innerText = "Department of " + document.getElementById('in-teacher-dept').value;
+        }
+
+        // Logo Upload Handler for Background Watermark
+        document.getElementById('in-logo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.getElementById('out-logo');
+                    img.src = event.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Generate and Download PDF
+        function downloadPDF() {
+            const element = document.getElementById('printable-area');
+            const opt = {
+                margin:       0,
+                filename:     'University_Cover_Page.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPD
